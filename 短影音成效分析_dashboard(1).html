@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>短影音成效分析 Dashboard</title>
+<style>
+  :root{
+    --bg:#f5f7fb;
+    --panel:#ffffff;
+    --ink:#172033;
+    --muted:#687386;
+    --line:#e6eaf0;
+    --blue:#3867d6;
+    --blue-soft:#eef3ff;
+    --green:#138a63;
+    --green-soft:#eaf8f2;
+    --amber:#b06a10;
+    --amber-soft:#fff6e6;
+    --red:#b64646;
+    --red-soft:#fff0f0;
+    --purple:#7257c5;
+    --shadow:0 12px 34px rgba(29,42,72,.08);
+    --radius:20px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 8% 0%, rgba(56,103,214,.09), transparent 28rem),
+      var(--bg);
+    line-height:1.65;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:42px 22px 72px}
+  .hero{
+    display:grid;
+    grid-template-columns:1.4fr .8fr;
+    gap:26px;
+    align-items:stretch;
+    margin-bottom:26px;
+  }
+  .hero-card,.summary-card,.panel{
+    background:rgba(255,255,255,.94);
+    border:1px solid rgba(225,230,239,.9);
+    box-shadow:var(--shadow);
+    border-radius:var(--radius);
+  }
+  .hero-card{padding:34px}
+  .eyebrow{
+    display:inline-block;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.14em;
+    color:var(--blue);
+    background:var(--blue-soft);
+    padding:6px 10px;
+    border-radius:999px;
+    margin-bottom:14px;
+  }
+  h1{font-size:38px;line-height:1.18;margin:0 0 12px;letter-spacing:-.02em}
+  .lead{font-size:16px;color:var(--muted);max-width:760px;margin:0}
+  .hero-note{
+    margin-top:22px;
+    padding:14px 16px;
+    border-left:4px solid var(--blue);
+    background:#f8faff;
+    border-radius:10px;
+    color:#42506a;
+    font-size:14px;
+  }
+  .summary-card{padding:28px;display:flex;flex-direction:column;justify-content:center}
+  .summary-label{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.08em}
+  .summary-value{font-size:56px;line-height:1;margin:8px 0 10px;font-weight:850;letter-spacing:-.05em}
+  .summary-desc{font-size:14px;color:var(--muted)}
+  .summary-split{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .chip{font-size:12px;padding:6px 10px;border-radius:999px;background:#f1f4f8;color:#4c5870;font-weight:700}
+
+  .kpis{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin:0 0 26px;
+  }
+  .kpi{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px 18px 16px;
+    box-shadow:0 8px 20px rgba(29,42,72,.045);
+  }
+  .kpi .label{font-size:12px;color:var(--muted);font-weight:750}
+  .kpi .value{font-size:27px;font-weight:850;margin-top:3px;letter-spacing:-.02em}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:3px}
+
+  .panel{padding:28px;margin-bottom:22px}
+  .panel-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:20px}
+  h2{font-size:23px;margin:0;letter-spacing:-.01em}
+  .section-desc{font-size:13px;color:var(--muted);margin-top:4px}
+  .badge{
+    white-space:nowrap;
+    padding:7px 10px;
+    font-size:12px;
+    font-weight:800;
+    border-radius:999px;
+  }
+  .badge.good{background:var(--green-soft);color:var(--green)}
+  .badge.warn{background:var(--amber-soft);color:var(--amber)}
+  .badge.bad{background:var(--red-soft);color:var(--red)}
+
+  .platform-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .platform-card{
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:19px;
+    background:#fff;
+  }
+  .platform-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .platform-name{font-weight:850;font-size:16px}
+  .rank{font-size:11px;color:var(--muted)}
+  .big{font-size:31px;font-weight:850;letter-spacing:-.03em}
+  .metric-label{font-size:12px;color:var(--muted)}
+  .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:7px 0;border-bottom:1px dashed #edf0f4}
+  .row:last-child{border-bottom:0}
+  .row strong{font-weight:800}
+
+  .bars{margin-top:20px}
+  .bar-row{
+    display:grid;
+    grid-template-columns:100px 1fr 72px;
+    gap:12px;
+    align-items:center;
+    margin:12px 0;
+    font-size:13px;
+  }
+  .track{height:12px;background:#edf0f5;border-radius:999px;overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,var(--blue),#7093e8);border-radius:999px}
+  .fill.purple{background:linear-gradient(90deg,var(--purple),#9b86df)}
+  .fill.green{background:linear-gradient(90deg,var(--green),#48ad89)}
+  .fill.amber{background:linear-gradient(90deg,#d58b29,#ebb85f)}
+  .bar-val{text-align:right;font-weight:800}
+
+  .split-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .insight-card{
+    border-radius:16px;
+    padding:21px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,#fff,#fbfcff);
+  }
+  .insight-card h3{font-size:16px;margin:0 0 7px}
+  .insight-card p{font-size:14px;color:#4c5870;margin:0}
+  .signal{
+    display:inline-block;
+    font-size:11px;
+    font-weight:850;
+    padding:5px 8px;
+    border-radius:8px;
+    margin-bottom:10px;
+    background:var(--blue-soft);
+    color:var(--blue);
+  }
+  .signal.green{background:var(--green-soft);color:var(--green)}
+  .signal.amber{background:var(--amber-soft);color:var(--amber)}
+  .signal.red{background:var(--red-soft);color:var(--red)}
+
+  .funnel{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-top:10px;
+  }
+  .funnel-step{
+    background:#f7f9fc;
+    border:1px solid #e8edf4;
+    border-radius:14px;
+    padding:16px;
+  }
+  .funnel-step .n{font-size:22px;font-weight:850}
+  .funnel-step .t{font-size:12px;color:var(--muted)}
+
+  .recommendations{display:grid;gap:12px}
+  .rec{
+    display:grid;
+    grid-template-columns:44px 1fr auto;
+    gap:14px;
+    align-items:start;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:17px;
+    background:#fff;
+  }
+  .num{
+    width:36px;height:36px;border-radius:11px;
+    display:grid;place-items:center;
+    background:var(--blue-soft);color:var(--blue);font-weight:900
+  }
+  .rec h3{font-size:15px;margin:0 0 5px}
+  .rec p{font-size:13px;color:#536077;margin:0}
+  .impact{font-size:11px;font-weight:800;color:var(--green);background:var(--green-soft);padding:5px 8px;border-radius:8px}
+
+  .script{
+    margin-top:14px;
+    border:1px solid #dce4f4;
+    background:#f8faff;
+    border-radius:16px;
+    padding:18px;
+  }
+  .script-grid{
+    display:grid;
+    grid-template-columns:90px 1fr;
+    gap:7px 14px;
+    font-size:13px;
+  }
+  .time{font-weight:850;color:var(--blue)}
+  .text{color:#445169}
+
+  .test-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+  .test-table th,.test-table td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .test-table th{font-size:12px;color:var(--muted);font-weight:800;background:#fafbfc}
+  .test-table tr:last-child td{border-bottom:0}
+
+  .callout{
+    border:1px solid #dfe6f4;
+    background:#f9fbff;
+    border-radius:16px;
+    padding:18px;
+    margin-top:16px;
+  }
+  .callout strong{display:block;margin-bottom:5px}
+  .callout p{margin:0;color:#536077;font-size:13px}
+
+  .footer{
+    margin-top:22px;
+    color:#7a8497;
+    font-size:12px;
+    display:flex;
+    justify-content:space-between;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  .print-btn{
+    border:0;
+    background:var(--ink);
+    color:white;
+    padding:10px 14px;
+    border-radius:10px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .print-btn:hover{opacity:.9}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr}
+    .kpis,.platform-grid{grid-template-columns:1fr 1fr}
+    .split-2{grid-template-columns:1fr}
+    .funnel{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:560px){
+    .wrap{padding:24px 14px 50px}
+    h1{font-size:30px}
+    .hero-card,.summary-card,.panel{padding:21px}
+    .kpis,.platform-grid,.funnel{grid-template-columns:1fr}
+    .bar-row{grid-template-columns:74px 1fr 58px}
+    .rec{grid-template-columns:40px 1fr}
+    .impact{grid-column:2}
+    .script-grid{grid-template-columns:74px 1fr}
+  }
+  @media print{
+    body{background:white}
+    .wrap{max-width:none;padding:0}
+    .hero-card,.summary-card,.panel,.kpi{box-shadow:none}
+    .print-btn{display:none}
+    .panel,.hero-card,.summary-card{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="hero">
+    <div class="hero-card">
+      <span class="eyebrow">SHORT-FORM VIDEO PERFORMANCE</span>
+      <h1>短影音成效分析 Dashboard</h1>
+      <p class="lead">
+        依據文件中的 Facebook、Instagram、Threads 與 TikTok 成效截圖，
+        將曝光、互動、觀看品質與轉換訊號整合成可執行的內容優化方向。
+      </p>
+      <div class="hero-note">
+        <strong>核心判讀：</strong>
+        這支內容在 IG 的「分發＋互動」表現最好；Threads 雖量小但互動密度高；
+        TikTok 最大問題不是曝光，而是前幾秒留存，平均觀看僅 3.06 秒且完播率為 0%。
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">跨平台可見總瀏覽</div>
+      <div class="summary-value">794</div>
+      <div class="summary-desc">FB 294 + IG 278 + Threads 49 + TikTok 173</div>
+      <div class="summary-split">
+        <span class="chip">FB＋IG 互動 25</span>
+        <span class="chip">Threads 互動 8</span>
+        <span class="chip">TikTok 新追蹤 1</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="kpis">
+    <div class="kpi">
+      <div class="label">FB＋IG 總瀏覽</div>
+      <div class="value">572</div>
+      <div class="sub">FB 294 / IG 278</div>
+    </div>
+    <div class="kpi">
+      <div class="label">FB＋IG 互動率</div>
+      <div class="value">4.4%</div>
+      <div class="sub">25 ÷ 572，依瀏覽次數估算</div>
+    </div>
+    <div class="kpi">
+      <div class="label">IG 互動率</div>
+      <div class="value">7.9%</div>
+      <div class="sub">22 ÷ 278；若以觸及 194 計為 11.3%</div>
+    </div>
+    <div class="kpi">
+      <div class="label">TikTok 平均觀看</div>
+      <div class="value">3.06s</div>
+      <div class="sub">完播率 0%，需優先修正</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>1. 平台成效總覽</h2>
+        <div class="section-desc">跨平台數據定義不同，以下比較用於判斷方向，不建議把互動率當成完全同口徑 KPI。</div>
+      </div>
+      <span class="badge good">IG 為目前最佳承接平台</span>
+    </div>
+
+    <div class="platform-grid">
+      <div class="platform-card">
+        <div class="platform-top">
+          <span class="platform-name">Instagram</span>
+          <span class="rank">分發＋互動最佳</span>
+        </div>
+        <div class="big">278</div>
+        <div class="metric-label">瀏覽次數</div>
+        <div class="row"><span>觸及人數</span><strong>194</strong></div>
+        <div class="row"><span>互動次數</span><strong>22</strong></div>
+        <div class="row"><span>總觀看時間</span><strong>25:27</strong></div>
+        <div class="row"><span>新增追蹤</span><strong>0</strong></div>
+      </div>
+
+      <div class="platform-card">
+        <div class="platform-top">
+          <span class="platform-name">Facebook</span>
+          <span class="rank">曝光尚可、互動偏低</span>
+        </div>
+        <div class="big">294</div>
+        <div class="metric-label">瀏覽次數</div>
+        <div class="row"><span>瀏覽者</span><strong>188</strong></div>
+        <div class="row"><span>互動次數</span><strong>3</strong></div>
+        <div class="row"><span>互動 / 瀏覽</span><strong>1.0%</strong></div>
+        <div class="row"><span>相對近期貼文</span><strong>偏低</strong></div>
+      </div>
+
+      <div class="platform-card">
+        <div class="platform-top">
+          <span class="platform-name">Threads</span>
+          <span class="rank">量小、互動密度高</span>
+        </div>
+        <div class="big">49</div>
+        <div class="metric-label">總瀏覽次數</div>
+        <div class="row"><span>互動次數</span><strong>8</strong></div>
+        <div class="row"><span>按讚 / 轉發</span><strong>6 / 2</strong></div>
+        <div class="row"><span>互動 / 瀏覽</span><strong>16.3%</strong></div>
+        <div class="row"><span>新增追蹤</span><strong>0</strong></div>
+      </div>
+
+      <div class="platform-card">
+        <div class="platform-top">
+          <span class="platform-name">TikTok</span>
+          <span class="rank">留存是主要瓶頸</span>
+        </div>
+        <div class="big">173</div>
+        <div class="metric-label">影片瀏覽</div>
+        <div class="row"><span>平均觀看時間</span><strong>3.06s</strong></div>
+        <div class="row"><span>完播率</span><strong>0%</strong></div>
+        <div class="row"><span>按讚</span><strong>2</strong></div>
+        <div class="row"><span>新增追蹤</span><strong>1</strong></div>
+      </div>
+    </div>
+
+    <div class="bars">
+      <div class="bar-row">
+        <div>Facebook</div>
+        <div class="track"><div class="fill" style="width:100%"></div></div>
+        <div class="bar-val">294</div>
+      </div>
+      <div class="bar-row">
+        <div>Instagram</div>
+        <div class="track"><div class="fill purple" style="width:94.6%"></div></div>
+        <div class="bar-val">278</div>
+      </div>
+      <div class="bar-row">
+        <div>TikTok</div>
+        <div class="track"><div class="fill green" style="width:58.8%"></div></div>
+        <div class="bar-val">173</div>
+      </div>
+      <div class="bar-row">
+        <div>Threads</div>
+        <div class="track"><div class="fill amber" style="width:16.7%"></div></div>
+        <div class="bar-val">49</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>2. 關鍵洞見</h2>
+        <div class="section-desc">把「量」與「質」分開看，才能知道下一支影片該改題材、改剪輯，還是改 CTA。</div>
+      </div>
+    </div>
+
+    <div class="split-2">
+      <div class="insight-card">
+        <span class="signal green">洞見 A｜題材在 IG 有市場</span>
+        <h3>「不寫程式也能做 Dashboard」的反差鉤子有效</h3>
+        <p>
+          文件顯示 IG Reel 的 278 次瀏覽高於帳號近期 Reels 的表現，且 22 次互動明顯集中在 IG。
+          這表示「AI × Dashboard × 無程式」本身具有內容吸引力，值得發展成系列，而不是立即換題材。
+        </p>
+      </div>
+      <div class="insight-card">
+        <span class="signal amber">洞見 B｜FB 是曝光，不是主要互動場</span>
+        <h3>Facebook 瀏覽不差，但互動效率弱</h3>
+        <p>
+          FB 有 294 次瀏覽、188 位瀏覽者，但僅 3 次互動，約為每 100 次瀏覽 1 次互動。
+          文件同時顯示該貼文相較近期 Facebook 貼文的瀏覽表現並不突出，現階段不宜把 FB 當主要放大平台。
+        </p>
+      </div>
+      <div class="insight-card">
+        <span class="signal green">洞見 C｜Threads 值得用「原生文字」放大</span>
+        <h3>小流量卻有高互動密度，代表觀點型文案有潛力</h3>
+        <p>
+          Threads 僅 49 次瀏覽，卻有 8 次互動（6 讚、2 轉發），互動 / 瀏覽約 16.3%。
+          其中 55.1% 流量來自首頁，另有 12.24% 來自搜尋，表示主題文字與關鍵字有被進一步發現的可能。
+        </p>
+      </div>
+      <div class="insight-card">
+        <span class="signal red">洞見 D｜TikTok 不是題材問題，先解留存</span>
+        <h3>3.06 秒平均觀看＋0% 完播，是最明確的流失訊號</h3>
+        <p>
+          TikTok 有 173 次初始曝光，但流量在發布後快速停止；平均觀看僅 3.06 秒，且完播率 0%。
+          這更像是「開頭沒有在最短時間交付結果」或節奏不符合 TikTok，而非單純曝光不足。
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>跨平台額外訊號</strong>
+      <p>
+        FB＋IG 共 25 次互動，其中 12 個按讚／心情、10 則留言、2 次分享、0 次儲存，另有 4 次連結點擊。
+        「留言數接近按讚數」代表這個內容有討論性；但「0 儲存」也顯示內容目前較像吸睛觀點，
+        還沒有強到讓觀眾覺得必須留下來日後照做。
+      </p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>3. 內容漏斗診斷</h2>
+        <div class="section-desc">用「看到 → 留下 → 互動 → 轉換」檢查影片現在卡在哪一段。</div>
+      </div>
+    </div>
+
+    <div class="funnel">
+      <div class="funnel-step">
+        <div class="n">794</div>
+        <div class="t">跨平台可見瀏覽量：題材有基本曝光能力</div>
+      </div>
+      <div class="funnel-step">
+        <div class="n">3.06s</div>
+        <div class="t">TikTok 平均觀看：前段留存有明顯問題</div>
+      </div>
+      <div class="funnel-step">
+        <div class="n">35*</div>
+        <div class="t">可見互動：FB＋IG 25、Threads 8、TikTok 2 讚</div>
+      </div>
+      <div class="funnel-step">
+        <div class="n">1</div>
+        <div class="t">明確新增追蹤：目前僅 TikTok 出現 1 位</div>
+      </div>
+    </div>
+    <div class="section-desc" style="margin-top:10px">
+      * 各平台對「互動」定義不同，35 僅為文件中可直接相加的可見互動數，不作嚴格跨平台 KPI。
+    </div>
+  </section>
+
+
+
+  <div class="footer">
+    <div>資料來源：使用者提供《短影音成效》文件。所有衍生比率皆依文件截圖數字計算。</div>
+    <button class="print-btn" onclick="window.print()">列印／另存 PDF</button>
+  </div>
+
+</div>
+</body>
+</html>
